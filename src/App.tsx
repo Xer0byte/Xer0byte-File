@@ -7,7 +7,6 @@ import { loadSlim } from '@tsparticles/slim';
 import { useAuth } from './contexts/AuthContext';
 import { signInWithGoogle, signInWithGithub, logOut, db, signInWithEmail, signUpWithEmail } from './firebase';
 import { collection, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
-import logoImg from './logo.png';
 
 const ParticleBackground = ({ theme }: { theme: 'dark' | 'light' }) => {
   const [init, setInit] = useState(false);
@@ -281,7 +280,7 @@ export default function App() {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="mb-4 sm:mb-6 flex justify-center"
               >
-                <img src={logoImg} alt="Logo" className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain" referrerPolicy="no-referrer" />
+                <img src="/logo.png" alt="Logo" className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain" referrerPolicy="no-referrer" />
               </motion.div>
               <h1 className={`text-[50px] sm:text-[70px] md:text-[100px] lg:text-[120px] font-black tracking-tighter mb-1 sm:mb-2 leading-tight flex justify-center ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
                 {"Xer0byte".split("").map((char, index) => (
