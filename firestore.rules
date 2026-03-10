@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required) - The unique identifier of the user.
+    //   - email: string (required) - The email address of the user.
+    //   - displayName: string (optional) - The display name of the user.
+    //   - photoURL: string (optional) - The URL of the user's profile picture.
+    //   - createdAt: timestamp (required) - The time the user account was created.
+    //
+    // Collection: users/{userId}/conversions
+    // Document ID: {conversionId}
+    // Fields:
+    //   - id: string (required) - The unique identifier of the conversion record.
+    //   - userId: string (required) - The ID of the user who performed the conversion.
+    //   - originalName: string (required) - The original name of the file.
+    //   - convertedName: string (required) - The name of the converted file.
+    //   - originalFormat: string (required) - The original format of the file.
+    //   - targetFormat: string (required) - The target format of the file.
+    //   - size: number (required) - The size of the original file in bytes.
+    //   - convertedAt: timestamp (required) - The time the conversion was completed.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+    
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser() {
+      let data = request.resource.data;
+      return hasRequiredFields(['uid', 'email', 'createdAt']) &&
+             hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.createdAt is timestamp &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (isValidUrl(data.photoURL) && data.photoURL.size() <= 500));
+    }
+    
+    function isValidConversion(userId) {
+      let data = request.resource.data;
+      return hasRequiredFields(['id', 'userId', 'originalName', 'convertedName', 'originalFormat', 'targetFormat', 'size', 'convertedAt']) &&
+             hasOnlyAllowedFields(['id', 'userId', 'originalName', 'convertedName', 'originalFormat', 'targetFormat', 'size', 'convertedAt']) &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.id is string && data.id.size() > 0 && data.id.size() <= 100 &&
+             data.originalName is string && data.originalName.size() > 0 && data.originalName.size() <= 500 &&
+             data.convertedName is string && data.convertedName.size() > 0 && data.convertedName.size() <= 500 &&
+             data.originalFormat is string && data.originalFormat.size() > 0 && data.originalFormat.size() <= 20 &&
+             data.targetFormat is string && data.targetFormat.size() > 0 && data.targetFormat.size() <= 20 &&
+             data.size is number && data.size >= 0 &&
+             data.convertedAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser();
+      allow update: if isOwner(userId) && isValidUser() && 
+                    request.resource.data.uid == resource.data.uid &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(userId);
+      
+      match /conversions/{conversionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidConversion(userId);
+        allow update: if isOwner(userId) && isValidConversion(userId) &&
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.convertedAt == resource.data.convertedAt;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

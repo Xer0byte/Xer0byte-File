@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A registered user of the application.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the user."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The URL of the user's profile picture."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the user account was created."
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "Conversion": {
+      "title": "Conversion",
+      "description": "A record of a file conversion performed by a user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier of the conversion record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who performed the conversion."
+        },
+        "originalName": {
+          "type": "string",
+          "description": "The original name of the file."
+        },
+        "convertedName": {
+          "type": "string",
+          "description": "The name of the converted file."
+        },
+        "originalFormat": {
+          "type": "string",
+          "description": "The original format of the file."
+        },
+        "targetFormat": {
+          "type": "string",
+          "description": "The target format of the file."
+        },
+        "size": {
+          "type": "number",
+          "description": "The size of the original file in bytes."
+        },
+        "convertedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the conversion was completed."
+        }
+      },
+      "required": ["id", "userId", "originalName", "convertedName", "originalFormat", "targetFormat", "size", "convertedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles."
+    },
+    "/users/{userId}/conversions/{conversionId}": {
+      "schema": {
+        "$ref": "#/entities/Conversion"
+      },
+      "description": "Stores conversion history for a specific user."
+    }
+  }
+}
